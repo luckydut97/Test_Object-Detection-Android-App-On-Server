@@ -3,11 +3,8 @@ package com.luckydut.ondeviceaitest;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-<<<<<<< HEAD
-=======
 import android.graphics.Matrix;
 import android.os.Build;
->>>>>>> 04dd40e (On/Off 기능 추가 및 인식 결과값 표시 UI 설계 시작)
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -54,29 +51,20 @@ public class MainActivity extends AppCompatActivity {
     private long lastUploadedTime = 0;
 
     private Overlay overlay;
-<<<<<<< HEAD
-=======
     private AppCompatButton actionButton; //start/stop 버튼
     private boolean isRunning = false; // start/stop 확인 버튼
->>>>>>> 04dd40e (On/Off 기능 추가 및 인식 결과값 표시 UI 설계 시작)
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-<<<<<<< HEAD
-        Log.d(TAG, "onCreate: Initializing views");
-        previewView = findViewById(R.id.camera_preview);
-        overlay = findViewById(R.id.overlay);
-=======
         Log.d(TAG, "onCreate: App started");
         previewView = findViewById(R.id.camera_preview);
         overlay = findViewById(R.id.overlay);
         actionButton = findViewById(R.id.action_btn);
 
         actionButton.setOnClickListener(v -> toggleActionButton());
->>>>>>> 04dd40e (On/Off 기능 추가 및 인식 결과값 표시 UI 설계 시작)
 
         if (overlay == null) {
             Log.e(TAG, "onCreate: Overlay view is null");
@@ -84,12 +72,9 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "onCreate: Overlay view initialized");
         }
 
-<<<<<<< HEAD
-=======
         // 초기 상태 설정
         updateButtonState();
 
->>>>>>> 04dd40e (On/Off 기능 추가 및 인식 결과값 표시 UI 설계 시작)
         cameraExecutor = Executors.newSingleThreadExecutor();
         imageProcessingExecutor = Executors.newSingleThreadExecutor();
         apiService = ApiClient.getClient().create(ApiService.class);
@@ -106,17 +91,34 @@ public class MainActivity extends AppCompatActivity {
         isRunning = !isRunning;
         Log.d("isRunning", "isRunning: " + isRunning);
         updateButtonState();
+        if (isRunning) {
+            startSendingImages();
+        } else {
+            stopSendingImages();
+        }
     }
 
     private void updateButtonState() {
         if (isRunning) {
             actionButton.setText("STOP");
             actionButton.setBackgroundTintList(ContextCompat.getColorStateList(this, android.R.color.darker_gray));
-            startCamera();
         } else {
             actionButton.setText("START");
             actionButton.setBackgroundTintList(ContextCompat.getColorStateList(this, android.R.color.holo_green_light));
         }
+    }
+
+    private void startSendingImages() {
+        Log.d(TAG, "startSendingImages: Starting image transmission");
+        // 이미지를 전송하는 작업 시작
+        startCamera(); // 카메라를 시작하여 이미지를 주기적으로 전송합니다.
+    }
+
+    private void stopSendingImages() {
+        Log.d(TAG, "stopSendingImages: Stopping image transmission");
+        // 이미지를 전송하는 작업 중지
+        cameraExecutor.shutdown(); // 카메라 실행을 중지합니다.
+        imageProcessingExecutor.shutdown(); // 이미지 처리 작업을 중지합니다.
     }
 
     private void requestCameraPermission() {
@@ -125,7 +127,6 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 101);
         } else {
             Log.d(TAG, "requestCameraPermission: Camera permission already granted");
-            startCamera();
         }
     }
 
@@ -135,7 +136,6 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onRequestPermissionsResult: Request code: " + requestCode);
         if (requestCode == 101 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG, "onRequestPermissionsResult: Camera permission granted");
-            startCamera();
         } else {
             Log.d(TAG, "onRequestPermissionsResult: Camera permission denied");
             Toast.makeText(this, "Camera permission is necessary", Toast.LENGTH_LONG).show();
@@ -169,59 +169,19 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-<<<<<<< HEAD
-                .setTargetResolution(new Size(3840, 2160))
-=======
                 .setTargetResolution(new Size(1080, 1520))
->>>>>>> 04dd40e (On/Off 기능 추가 및 인식 결과값 표시 UI 설계 시작)
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .setImageQueueDepth(10)
                 .build();
 
         imageAnalysis.setAnalyzer(cameraExecutor, image -> {
             long currentTime = SystemClock.elapsedRealtime();
-<<<<<<< HEAD
-            if (currentTime - lastUploadedTime >= 1000) { // 1초 간격 확인
-=======
             if (currentTime - lastUploadedTime >= 1000 && isRunning) { // 1초 간격 확인 및 isRunning 상태 확인
->>>>>>> 04dd40e (On/Off 기능 추가 및 인식 결과값 표시 UI 설계 시작)
                 lastUploadedTime = currentTime; // 마지막 업로드 시간 업데이트
 
                 mainHandler.post(() -> {
                     Bitmap bitmap = previewView.getBitmap();
                     if (bitmap != null) {
-<<<<<<< HEAD
-                        String base64Image = ImageUtils.bitmapToBase64(bitmap);
-                        ImageData imageData = new ImageData(base64Image);
-                        Log.d(TAG, "Starting API call to upload image");
-                        apiService.uploadImage(imageData).enqueue(new Callback<DetectionResult>() {
-                            @Override
-                            public void onResponse(Call<DetectionResult> call, Response<DetectionResult> response) {
-                                Log.d(TAG, "Response received");
-                                if (response.isSuccessful() && response.body() != null) {
-                                    DetectionResult detectionResult = response.body();
-                                    Log.d(TAG, "Detection result: " + detectionResult.getObjects().toString());
-                                    overlay.update(bitmap, detectionResult); // Overlay 업데이트
-                                } else {
-                                    try {
-                                        String errorBody = response.errorBody().string();
-                                        Log.e(TAG, "Response error: " + errorBody);
-                                    } catch (IOException e) {
-                                        Log.e(TAG, "Error reading response error body", e);
-                                    }
-                                    Toast.makeText(MainActivity.this, "Error: " + response.message(), Toast.LENGTH_SHORT).show();
-                                }
-                            }
-
-                            @Override
-                            public void onFailure(Call<DetectionResult> call, Throwable t) {
-                                Log.e(TAG, "Request failed: " + t.getMessage());
-                                Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                    image.close();
-=======
                         Bitmap finalBitmap = rotateBitmap(bitmap, 0); // 필요시 각도 조절
                         image.close(); // image를 close 처리합니다.
 
@@ -259,7 +219,6 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         image.close();
                     }
->>>>>>> 04dd40e (On/Off 기능 추가 및 인식 결과값 표시 UI 설계 시작)
                 });
             } else {
                 image.close();
@@ -279,8 +238,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        cameraExecutor.shutdown();
-        imageProcessingExecutor.shutdown();
+        if (!cameraExecutor.isShutdown()) {
+            cameraExecutor.shutdown();
+        }
+        if (!imageProcessingExecutor.isShutdown()) {
+            imageProcessingExecutor.shutdown();
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.P)
