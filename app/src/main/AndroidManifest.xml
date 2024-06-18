@@ -21,11 +21,15 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|density|screenLayout|layoutDirection|fontScale|locale|keyboard|keyboardHidden|navigation|mcc|mnc|screenSize|smallestScreenSize|uiMode">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.max_aspect"
+                android:value="2.1" />
         </activity>
     </application>
 

@@ -24,15 +24,51 @@
     </FrameLayout>
 
     <LinearLayout
+        android:id="@+id/second_layout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="vertical">
-        <!-- 다른 뷰들을 여기에 추가합니다. 예를 들어, 상태 표시나 제어 버튼 등 -->
+        <!-- 인식 결과 텍스트 -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="인식 관련 정보"
-            android:gravity="center"/>
+            android:text="인식 결과"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:padding="8dp"/>
+
+        <!-- 중앙에 위치할 TextView -->
+        <TextView
+            android:id="@+id/center_text"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:text="인식 결과값 표시 부분"
+            android:textSize="18sp"
+            android:gravity="center"
+            android:textColor="#000000"/>
+
+        <!-- Start 버튼 -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/action_btn"
+                android:layout_width="335dp"
+                android:layout_height="45dp"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/button_selector2"
+                android:backgroundTint="#ff99cc00"
+                android:text="START"
+                android:textColor="#ffffff"
+                android:textSize="18dp"
+                android:textStyle="bold"
+                android:gravity="center"/>
+
+        </FrameLayout>
     </LinearLayout>
 </LinearLayout>
