@@ -91,34 +91,17 @@ public class MainActivity extends AppCompatActivity {
         isRunning = !isRunning;
         Log.d("isRunning", "isRunning: " + isRunning);
         updateButtonState();
-        if (isRunning) {
-            startSendingImages();
-        } else {
-            stopSendingImages();
-        }
     }
 
     private void updateButtonState() {
         if (isRunning) {
             actionButton.setText("STOP");
             actionButton.setBackgroundTintList(ContextCompat.getColorStateList(this, android.R.color.darker_gray));
+            startCamera();
         } else {
             actionButton.setText("START");
             actionButton.setBackgroundTintList(ContextCompat.getColorStateList(this, android.R.color.holo_green_light));
         }
-    }
-
-    private void startSendingImages() {
-        Log.d(TAG, "startSendingImages: Starting image transmission");
-        // 이미지를 전송하는 작업 시작
-        startCamera(); // 카메라를 시작하여 이미지를 주기적으로 전송합니다.
-    }
-
-    private void stopSendingImages() {
-        Log.d(TAG, "stopSendingImages: Stopping image transmission");
-        // 이미지를 전송하는 작업 중지
-        cameraExecutor.shutdown(); // 카메라 실행을 중지합니다.
-        imageProcessingExecutor.shutdown(); // 이미지 처리 작업을 중지합니다.
     }
 
     private void requestCameraPermission() {
@@ -127,6 +110,7 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 101);
         } else {
             Log.d(TAG, "requestCameraPermission: Camera permission already granted");
+            startCamera();
         }
     }
 
@@ -136,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onRequestPermissionsResult: Request code: " + requestCode);
         if (requestCode == 101 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG, "onRequestPermissionsResult: Camera permission granted");
+            startCamera();
         } else {
             Log.d(TAG, "onRequestPermissionsResult: Camera permission denied");
             Toast.makeText(this, "Camera permission is necessary", Toast.LENGTH_LONG).show();
@@ -238,12 +223,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (!cameraExecutor.isShutdown()) {
-            cameraExecutor.shutdown();
-        }
-        if (!imageProcessingExecutor.isShutdown()) {
-            imageProcessingExecutor.shutdown();
-        }
+        cameraExecutor.shutdown();
+        imageProcessingExecutor.shutdown();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.P)
