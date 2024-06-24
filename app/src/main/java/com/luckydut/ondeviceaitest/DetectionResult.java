@@ -14,26 +14,26 @@ public class DetectionResult {
     }
 
     public static class Object {
-        private float x;
-        private float y;
+        private float centerX;
+        private float centerY;
         private float width;
         private float height;
         private String label;
 
-        public float getX() {
-            return x;
+        public float getCenterX() {
+            return centerX;
         }
 
-        public void setX(float x) {
-            this.x = x;
+        public void setCenterX(float centerX) {
+            this.centerX = centerX;
         }
 
-        public float getY() {
-            return y;
+        public float getCenterY() {
+            return centerY;
         }
 
-        public void setY(float y) {
-            this.y = y;
+        public void setCenterY(float centerY) {
+            this.centerY = centerY;
         }
 
         public float getWidth() {
@@ -63,8 +63,8 @@ public class DetectionResult {
         @Override
         public String toString() {
             return "Object{" +
-                    "x=" + x +
-                    ", y=" + y +
+                    "centerX=" + centerX +
+                    ", centerY=" + centerY +
                     ", width=" + width +
                     ", height=" + height +
                     ", label='" + label + '\'' +

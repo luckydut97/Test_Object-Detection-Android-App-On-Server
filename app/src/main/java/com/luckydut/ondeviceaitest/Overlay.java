@@ -51,8 +51,13 @@ public class Overlay extends View {
 
             for (DetectionResult.Object object : result.getObjects()) {
                 Log.d(TAG, "onDraw: Drawing object: " + object.toString());
-                canvas.drawRect(object.getX(), object.getY(), object.getX() + object.getWidth(), object.getY() + object.getHeight(), paint);
-                canvas.drawText(object.getLabel(), object.getX(), object.getY() - 10, paint);
+                float left = object.getCenterX() - object.getWidth() / 2;
+                float top = object.getCenterY() - object.getHeight() / 2;
+                float right = object.getCenterX() + object.getWidth() / 2;
+                float bottom = object.getCenterY() + object.getHeight() / 2;
+
+                canvas.drawRect(left, top, right, bottom, paint);
+                canvas.drawText(object.getLabel(), left, top - 10, paint);
             }
         } else {
             Log.d(TAG, "onDraw: Detection result is null");
