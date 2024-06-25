@@ -32,7 +32,7 @@ public class Overlay extends View {
     }
 
     private void initPaint() {
-        paint.setColor(Color.GREEN);
+        paint.setColor(Color.RED);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(3);
         paint.setTextSize(44);
