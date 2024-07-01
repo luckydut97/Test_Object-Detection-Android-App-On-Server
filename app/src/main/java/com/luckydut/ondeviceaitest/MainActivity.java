@@ -3,6 +3,7 @@ package com.luckydut.ondeviceaitest;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.os.Build;
 import android.os.Bundle;
@@ -12,8 +13,13 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.util.Size;
 import android.view.DisplayCutout;
+import android.view.Gravity;
 import android.view.View;
 import android.view.WindowInsets;
+import android.widget.LinearLayout;
+import android.widget.TableLayout;
+import android.widget.TableRow;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -33,6 +39,7 @@ import androidx.core.content.ContextCompat;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,8 +58,9 @@ public class MainActivity extends AppCompatActivity {
     private long lastUploadedTime = 0;
 
     private Overlay overlay;
-    private AppCompatButton actionButton; //start/stop 버튼
+    private AppCompatButton actionButton; // start/stop 버튼
     private boolean isRunning = false; // start/stop 확인 버튼
+    private TableLayout tableLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
         previewView = findViewById(R.id.camera_preview);
         overlay = findViewById(R.id.overlay);
         actionButton = findViewById(R.id.action_btn);
+        tableLayout = findViewById(R.id.table_layout);
 
         actionButton.setOnClickListener(v -> toggleActionButton());
 
@@ -172,7 +181,7 @@ public class MainActivity extends AppCompatActivity {
 
                         imageProcessingExecutor.execute(() -> {
                             String base64Image = ImageUtils.bitmapToBase64(finalBitmap);
-                            ImageData imageData = new ImageData(base64Image);
+                            ImageData imageData = new ImageData(base64Image, 1); // ID 추가
                             Log.d(TAG, "Starting API call to upload image");
                             apiService.uploadImage(imageData).enqueue(new Callback<DetectionResult>() {
                                 @Override
@@ -180,9 +189,19 @@ public class MainActivity extends AppCompatActivity {
                                     Log.d(TAG, "Response received");
                                     if (response.isSuccessful() && response.body() != null) {
                                         DetectionResult detectionResult = response.body();
-                                        Log.d(TAG, "Detection result: " + detectionResult.getObjects().toString());
-
-                                        mainHandler.post(() -> overlay.update(detectionResult)); // UI 업데이트를 메인 스레드에서 실행
+                                        if (detectionResult.getDetection() == 1) {
+                                            Log.d(TAG, "Detection result: " + detectionResult.getBoxes().toString());
+                                            mainHandler.post(() -> {
+                                                overlay.update(detectionResult); // UI 업데이트를 메인 스레드에서 실행
+                                                updateTable(detectionResult.getClassCnt()); // 테이블 업데이트
+                                            });
+                                        } else {
+                                            Log.d(TAG, "No detection");
+                                            mainHandler.post(() -> {
+                                                overlay.update(null); // UI 업데이트를 메인 스레드에서 실행
+                                                updateTable(null); // 빈 테이블 표시
+                                            });
+                                        }
                                     } else {
                                         try {
                                             String errorBody = response.errorBody().string();
@@ -209,9 +228,81 @@ public class MainActivity extends AppCompatActivity {
                 image.close();
             }
         });
-
         cameraProvider.unbindAll();
         cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, imageAnalysis);
+    }
+
+    private void updateTable(Map<String, Integer> classCnt) {
+        TableLayout tableLayout = findViewById(R.id.table_layout);
+
+        // 헤더와 첫 번째 구분선을 제외한 모든 행 제거
+        int childCount = tableLayout.getChildCount();
+        if (childCount > 2) {
+            tableLayout.removeViews(2, childCount - 2);
+        }
+
+        if (classCnt == null) {
+            return;
+        }
+
+        // 데이터 행 추가
+        for (Map.Entry<String, Integer> entry : classCnt.entrySet()) {
+            String productName = entry.getKey();
+            int quantity = entry.getValue();
+
+            TableRow row = new TableRow(this);
+            row.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+            row.setGravity(Gravity.CENTER_VERTICAL); // TableRow의 세로 가운데 정렬
+
+            // 제품명 TextView
+            TextView tvProductName = new TextView(this);
+            tvProductName.setText(productName);
+            tvProductName.setGravity(Gravity.CENTER);
+            tvProductName.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f));
+            tvProductName.setTextSize(16); // 글자 크기 설정
+            row.addView(tvProductName);
+
+            // 색상 View
+            LinearLayout colorLayout = new LinearLayout(this);
+            colorLayout.setGravity(Gravity.CENTER);
+            TableRow.LayoutParams colorLayoutParams = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f);
+            colorLayout.setLayoutParams(colorLayoutParams);
+
+            View colorView = new View(this);
+            LinearLayout.LayoutParams colorParams = new LinearLayout.LayoutParams(30, 30); // 정사각형 설정
+            colorParams.gravity = Gravity.CENTER;
+            colorView.setLayoutParams(colorParams);
+
+            // 리소스 파일에서 색상 가져오기
+            if (productName.startsWith("Y")) {
+                colorView.setBackgroundColor(ContextCompat.getColor(this, R.color.yellow));
+            } else if (productName.startsWith("V")) {
+                colorView.setBackgroundColor(ContextCompat.getColor(this, R.color.violet));
+            } else if (productName.startsWith("G")) {
+                colorView.setBackgroundColor(ContextCompat.getColor(this, R.color.green));
+            }
+
+            colorLayout.addView(colorView);
+            row.addView(colorLayout);
+
+            // 수량 TextView
+            TextView tvQuantity = new TextView(this);
+            tvQuantity.setText(String.valueOf(quantity));
+            tvQuantity.setGravity(Gravity.CENTER);
+            tvQuantity.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f));
+            tvQuantity.setTextSize(16); // 글자 크기 설정
+            row.addView(tvQuantity);
+
+            tableLayout.addView(row);
+
+            // 구분선 추가
+            View divider = new View(this);
+            TableRow.LayoutParams dividerParams = new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 1);
+            dividerParams.setMargins(0, 4, 0, 3);
+            divider.setLayoutParams(dividerParams);
+            divider.setBackgroundColor(Color.parseColor("#CCCCCC"));
+            tableLayout.addView(divider);
+        }
     }
 
     private Bitmap rotateBitmap(Bitmap bitmap, int rotationDegrees) {

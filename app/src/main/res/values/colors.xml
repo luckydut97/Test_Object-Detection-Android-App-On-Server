@@ -9,4 +9,7 @@
     <color name="gray">#E0E0E0</color>
     <color name="white">#FFFFFFFF</color>
     <color name="skyblue">#15223A</color>
+    <color name="yellow">#DBDB00</color>
+    <color name="violet">#845CCA</color>
+    <color name="green">#00A511</color>
 </resources>

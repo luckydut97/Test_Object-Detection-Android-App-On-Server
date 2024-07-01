@@ -32,7 +32,7 @@ public class Overlay extends View {
     }
 
     private void initPaint() {
-        paint.setColor(Color.RED);
+        paint.setColor(Color.GREEN);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(3);
         paint.setTextSize(44);
@@ -46,21 +46,23 @@ public class Overlay extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (result != null) {
+        if (result != null && result.getDetection() == 1) {
             Log.d(TAG, "onDraw: Drawing detection result");
 
-            for (DetectionResult.Object object : result.getObjects()) {
-                Log.d(TAG, "onDraw: Drawing object: " + object.toString());
-                float left = object.getCenterX() - object.getWidth() / 2;
-                float top = object.getCenterY() - object.getHeight() / 2;
-                float right = object.getCenterX() + object.getWidth() / 2;
-                float bottom = object.getCenterY() + object.getHeight() / 2;
+            for (DetectionResult.Box box : result.getBoxes()) {
+                Log.d(TAG, "onDraw: Drawing box: " + box.toString());
 
-                canvas.drawRect(left, top, right, bottom, paint);
-                canvas.drawText(object.getLabel(), left, top - 10, paint);
+                float startX = box.getX1();
+                float startY = box.getY1();
+                float endX = box.getX2();
+                float endY = box.getY1();  // y1 위치에서 가로줄만 그림
+
+                // 상단 가로줄만 그림
+                canvas.drawLine(startX, startY, endX, endY, paint);
+                canvas.drawText(box.getLabel(), startX, startY - 10, paint);
             }
         } else {
-            Log.d(TAG, "onDraw: Detection result is null");
+            Log.d(TAG, "onDraw: No detection");
         }
     }
 }

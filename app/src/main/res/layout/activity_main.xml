@@ -20,13 +20,14 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@android:color/transparent" />
+
         <ImageView
+            android:visibility="gone"
             android:id="@+id/settings_icon"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_gravity="top|end"
             android:layout_margin="16dp"
-            android:src="@drawable/ic_settings"
             android:contentDescription="Settings"/>
 
     </FrameLayout>
@@ -44,10 +45,14 @@
             android:layout_height="wrap_content"
             android:text="인식 결과"
             android:textColor="@color/black"
-            android:background="#FFE8C5"
+            android:background="#C5C5C5"
             android:textStyle="bold"
             android:gravity="center"
             android:padding="8dp"/>
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
         <!-- 테이블 레이아웃 -->
         <TableLayout
@@ -58,43 +63,27 @@
             android:padding="3dp">
 
             <TableRow>
-                <LinearLayout
+                <TextView
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:gravity="center">
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:text="제품명"
-                        android:textStyle="bold"
-                        android:gravity="center"/>
-                </LinearLayout>
-                <LinearLayout
+                    android:text="제품명"
+                    android:textStyle="bold"
+                    android:gravity="center"/>
+                <TextView
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:gravity="center">
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:text="색상"
-                        android:textStyle="bold"
-                        android:gravity="center"/>
-                </LinearLayout>
-
-                <LinearLayout
+                    android:text="색상"
+                    android:textStyle="bold"
+                    android:gravity="center"/>
+                <TextView
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:gravity="center">
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:text="수량"
-                        android:textStyle="bold"
-                        android:gravity="center"/>
-                </LinearLayout>
+                    android:text="수량"
+                    android:textStyle="bold"
+                    android:gravity="center"/>
             </TableRow>
 
             <View
@@ -103,89 +92,9 @@
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="3dp"
                 android:background="#CCCCCC"/>
-
-            <!-- 아이템들이 추가되는 예시 -->
-            <TableRow>
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center">
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:text="NPB325"
-                        android:gravity="center"/>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center">
-                    <View
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:background="@drawable/square_background_yellow"/>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center">
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:text="12"
-                        android:gravity="center"/>
-                </LinearLayout>
-            </TableRow>
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="3dp"
-                android:layout_marginBottom="3dp"
-                android:background="#00FFFFFF"/>
-            <!-- 아이템들이 추가되는 예시2 -->
-            <TableRow>
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center">
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:text="NPV325"
-                        android:gravity="center"/>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center">
-                    <View
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:background="@drawable/square_background_purple"/>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center">
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:text="15"
-                        android:gravity="center"/>
-                </LinearLayout>
-            </TableRow>
-
         </TableLayout>
+        </ScrollView>
+
         <!-- Start 버튼 -->
         <FrameLayout
             android:layout_width="match_parent"

@@ -1,55 +1,83 @@
 package com.luckydut.ondeviceaitest;
 
 import java.util.List;
+import java.util.Map;
 
 public class DetectionResult {
-    private List<Object> objects;
+    private String id;
+    private List<Box> boxes;
+    private Map<String, Integer> class_cnt;
+    private int detection;
 
-    public List<Object> getObjects() {
-        return objects;
+    public String getId() {
+        return id;
     }
 
-    public void setObjects(List<Object> objects) {
-        this.objects = objects;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public static class Object {
-        private float centerX;
-        private float centerY;
-        private float width;
-        private float height;
+    public List<Box> getBoxes() {
+        return boxes;
+    }
+
+    public void setBoxes(List<Box> boxes) {
+        this.boxes = boxes;
+    }
+
+    public Map<String, Integer> getClassCnt() {
+        return class_cnt;
+    }
+
+    public void setClassCnt(Map<String, Integer> class_cnt) {
+        this.class_cnt = class_cnt;
+    }
+
+    public int getDetection() {
+        return detection;
+    }
+
+    public void setDetection(int detection) {
+        this.detection = detection;
+    }
+
+    public static class Box {
+        private float x1;
+        private float y1;
+        private float x2;
+        private float y2;
         private String label;
 
-        public float getCenterX() {
-            return centerX;
+        public float getX1() {
+            return x1;
         }
 
-        public void setCenterX(float centerX) {
-            this.centerX = centerX;
+        public void setX1(float x1) {
+            this.x1 = x1;
         }
 
-        public float getCenterY() {
-            return centerY;
+        public float getY1() {
+            return y1;
         }
 
-        public void setCenterY(float centerY) {
-            this.centerY = centerY;
+        public void setY1(float y1) {
+            this.y1 = y1;
         }
 
-        public float getWidth() {
-            return width;
+        public float getX2() {
+            return x2;
         }
 
-        public void setWidth(float width) {
-            this.width = width;
+        public void setX2(float x2) {
+            this.x2 = x2;
         }
 
-        public float getHeight() {
-            return height;
+        public float getY2() {
+            return y2;
         }
 
-        public void setHeight(float height) {
-            this.height = height;
+        public void setY2(float y2) {
+            this.y2 = y2;
         }
 
         public String getLabel() {
@@ -62,11 +90,11 @@ public class DetectionResult {
 
         @Override
         public String toString() {
-            return "Object{" +
-                    "centerX=" + centerX +
-                    ", centerY=" + centerY +
-                    ", width=" + width +
-                    ", height=" + height +
+            return "Box{" +
+                    "x1=" + x1 +
+                    ", y1=" + y1 +
+                    ", x2=" + x2 +
+                    ", y2=" + y2 +
                     ", label='" + label + '\'' +
                     '}';
         }
@@ -75,7 +103,10 @@ public class DetectionResult {
     @Override
     public String toString() {
         return "DetectionResult{" +
-                "objects=" + objects +
+                "id='" + id + '\'' +
+                ", boxes=" + boxes +
+                ", class_cnt=" + class_cnt +
+                ", detection=" + detection +
                 '}';
     }
 }
