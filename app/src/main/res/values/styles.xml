@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="CustomTimePickerDialog" parent="Theme.AppCompat.Light.Dialog">
+        <item name="colorAccent">#FF4081</item> <!-- 여기서 원하는 색상으로 변경 -->
+    </style>
+</resources>

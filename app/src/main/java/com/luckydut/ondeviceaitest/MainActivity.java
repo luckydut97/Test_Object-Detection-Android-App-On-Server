@@ -1,6 +1,8 @@
 package com.luckydut.ondeviceaitest;
 
 import android.Manifest;
+import android.app.TimePickerDialog;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -16,11 +18,13 @@ import android.view.DisplayCutout;
 import android.view.Gravity;
 import android.view.View;
 import android.view.WindowInsets;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.TimePicker;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -39,6 +43,7 @@ import androidx.core.content.ContextCompat;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -59,8 +64,25 @@ public class MainActivity extends AppCompatActivity {
 
     private Overlay overlay;
     private AppCompatButton actionButton; // start/stop 버튼
+    private ImageView settingsButton; // 설정 버튼
     private boolean isRunning = false; // start/stop 확인 버튼
     private TableLayout tableLayout;
+
+    // 특정 시간대 설정 (초기값)
+    private int startHour = 0;
+    private int startMinute = 0;
+    private int endHour = 0;
+    private int endMinute = 0;
+
+    private Handler timeHandler = new Handler(Looper.getMainLooper());
+    private Runnable timeCheckRunnable = new Runnable() {
+        @Override
+        public void run() {
+            checkAndToggleAction();
+            // 2초마다 실행
+            timeHandler.postDelayed(this, 2000);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,9 +93,18 @@ public class MainActivity extends AppCompatActivity {
         previewView = findViewById(R.id.camera_preview);
         overlay = findViewById(R.id.overlay);
         actionButton = findViewById(R.id.action_btn);
+        settingsButton = findViewById(R.id.settings_icon);
         tableLayout = findViewById(R.id.table_layout);
 
-        actionButton.setOnClickListener(v -> toggleActionButton());
+        actionButton.setOnClickListener(v -> {
+            if (startHour == 0 && startMinute == 0 && endHour == 0 && endMinute == 0) {
+                Toast.makeText(this, "설정 버튼에서 자동 동작 시간을 설정해주세요.", Toast.LENGTH_LONG).show();
+            } else {
+                toggleActionButton();
+            }
+        });
+
+        settingsButton.setOnClickListener(v -> showTimePickerDialog());
 
         if (overlay == null) {
             Log.e(TAG, "onCreate: Overlay view is null");
@@ -81,6 +112,8 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "onCreate: Overlay view initialized");
         }
 
+        // 설정 시간 불러오기
+        loadTimePreferences();
         // 초기 상태 설정
         updateButtonState();
 
@@ -94,6 +127,14 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "onCreate: Handling display cutout");
             handleDisplayCutout();
         }
+
+        // 시간 체크 Runnable 시작
+        timeCheckRunnable.run();
+
+        /*// 비정상 종료 테스트 Test crash button
+        findViewById(R.id.test_crash_button).setOnClickListener(v -> {
+            throw new RuntimeException("Test crash"); // Force a crash
+        });*/
     }
 
     private void toggleActionButton() {
@@ -103,13 +144,36 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateButtonState() {
+        String timeRangeText = "설정시간: " + String.format("%02d:%02d~%02d:%02d", startHour, startMinute, endHour, endMinute);
+
         if (isRunning) {
-            actionButton.setText("STOP");
+            actionButton.setText("실행 중 (" + timeRangeText + ")");
             actionButton.setBackgroundTintList(ContextCompat.getColorStateList(this, android.R.color.darker_gray));
             startCamera();
         } else {
-            actionButton.setText("START");
+            if (startHour == 0 && startMinute == 0 && endHour == 0 && endMinute == 0) {
+                actionButton.setText("시간 설정 대기 중");
+            } else {
+                actionButton.setText("실행 대기 (" + timeRangeText + ")");
+            }
             actionButton.setBackgroundTintList(ContextCompat.getColorStateList(this, android.R.color.holo_green_light));
+            stopCamera();
+        }
+    }
+
+    private void checkAndToggleAction() {
+        Calendar calendar = Calendar.getInstance();
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+        int minute = calendar.get(Calendar.MINUTE);
+        boolean shouldRun = (hour > startHour || (hour == startHour && minute >= startMinute)) &&
+                (hour < endHour || (hour == endHour && minute < endMinute));
+
+        if (shouldRun && !isRunning) {
+            isRunning = true;
+            updateButtonState();
+        } else if (!shouldRun && isRunning) {
+            isRunning = false;
+            updateButtonState();
         }
     }
 
@@ -149,6 +213,16 @@ public class MainActivity extends AppCompatActivity {
         }, ContextCompat.getMainExecutor(this));
     }
 
+    private void stopCamera() {
+        Log.d(TAG, "stopCamera: Stopping camera");
+        try {
+            ProcessCameraProvider cameraProvider = ProcessCameraProvider.getInstance(this).get();
+            cameraProvider.unbindAll();
+        } catch (ExecutionException | InterruptedException e) {
+            Log.e(TAG, "Error stopping camera: " + e.getMessage());
+        }
+    }
+
     private void bindCameraUseCases(ProcessCameraProvider cameraProvider) {
         Log.d(TAG, "bindCameraUseCases: Binding camera use cases");
         Preview preview = new Preview.Builder().build();
@@ -181,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
 
                         imageProcessingExecutor.execute(() -> {
                             String base64Image = ImageUtils.bitmapToBase64(finalBitmap);
-                            ImageData imageData = new ImageData(base64Image, 1); // ID 추가
+                            ImageData imageData = new ImageData(base64Image, 2); // ID 변경(휴대폰 마다 id 다르게 해야함.)
                             Log.d(TAG, "Starting API call to upload image");
                             apiService.uploadImage(imageData).enqueue(new Callback<DetectionResult>() {
                                 @Override
@@ -316,6 +390,7 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         cameraExecutor.shutdown();
         imageProcessingExecutor.shutdown();
+        timeHandler.removeCallbacks(timeCheckRunnable); // 타임 체크 핸들러 콜백 제거
     }
 
     @RequiresApi(api = Build.VERSION_CODES.P)
@@ -340,5 +415,64 @@ public class MainActivity extends AppCompatActivity {
             }
             return v.onApplyWindowInsets(insets);
         });
+    }
+
+    private void showTimePickerDialog() {
+        Calendar calendar = Calendar.getInstance();
+        int currentHour = calendar.get(Calendar.HOUR_OF_DAY);
+        int currentMinute = calendar.get(Calendar.MINUTE);
+
+        // 시작 시간 설정
+        View startTitleView = getLayoutInflater().inflate(R.layout.dialog_title, null);
+        TextView startTitleTextView = startTitleView.findViewById(R.id.dialogTitle);
+        startTitleTextView.setText("시작 시간 설정");
+
+        TimePickerDialog startTimePicker = new TimePickerDialog(this, (view, hourOfDay, minute) -> {
+            startHour = hourOfDay;
+            startMinute = minute;
+
+            // 종료 시간 설정
+            View endTitleView = getLayoutInflater().inflate(R.layout.dialog_title, null);
+            TextView endTitleTextView = endTitleView.findViewById(R.id.dialogTitle);
+            endTitleTextView.setText("종료 시간 설정");
+
+            TimePickerDialog endTimePicker = new TimePickerDialog(this, (view1, hourOfDay1, minute1) -> {
+                if (hourOfDay1 < startHour || (hourOfDay1 == startHour && minute1 <= startMinute)) {
+                    Toast.makeText(MainActivity.this, "종료 시간을 시작 시간보다 이전으로 설정할 수 없습니다.", Toast.LENGTH_LONG).show();
+                } else {
+                    endHour = hourOfDay1;
+                    endMinute = minute1;
+                    Toast.makeText(MainActivity.this, "시간이 설정되었습니다: " + startHour + ":" + startMinute + " - " + endHour + ":" + endMinute, Toast.LENGTH_SHORT).show();
+                    saveTimePreferences(); // 시간을 저장
+                    updateButtonState();
+                }
+            }, currentHour, currentMinute, true);
+
+            // 종료 시간 설정 다이얼로그 타이틀 설정
+            endTimePicker.setCustomTitle(endTitleView);
+            endTimePicker.show();
+        }, currentHour, currentMinute, true);
+
+        // 시작 시간 설정 다이얼로그 타이틀 설정
+        startTimePicker.setCustomTitle(startTitleView);
+        startTimePicker.show();
+    }
+
+    private void saveTimePreferences() {
+        SharedPreferences preferences = getSharedPreferences("time_prefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putInt("start_hour", startHour);
+        editor.putInt("start_minute", startMinute);
+        editor.putInt("end_hour", endHour);
+        editor.putInt("end_minute", endMinute);
+        editor.apply();
+    }
+
+    private void loadTimePreferences() {
+        SharedPreferences preferences = getSharedPreferences("time_prefs", MODE_PRIVATE);
+        startHour = preferences.getInt("start_hour", 0);
+        startMinute = preferences.getInt("start_minute", 0);
+        endHour = preferences.getInt("end_hour", 0);
+        endMinute = preferences.getInt("end_minute", 0);
     }
 }
