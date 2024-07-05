@@ -140,6 +140,16 @@ public class MainActivity extends AppCompatActivity {
     private void toggleActionButton() {
         isRunning = !isRunning;
         Log.d("isRunning", "isRunning: " + isRunning);
+
+        if (!isRunning) {
+            // STOP 버튼을 눌렀을 때 설정 시간을 0,0으로 초기화
+            startHour = 0;
+            startMinute = 0;
+            endHour = 0;
+            endMinute = 0;
+            saveTimePreferences();
+        }
+
         updateButtonState();
     }
 
@@ -255,7 +265,7 @@ public class MainActivity extends AppCompatActivity {
 
                         imageProcessingExecutor.execute(() -> {
                             String base64Image = ImageUtils.bitmapToBase64(finalBitmap);
-                            ImageData imageData = new ImageData(base64Image, 2); // ID 변경(휴대폰 마다 id 다르게 해야함.)
+                            ImageData imageData = new ImageData(base64Image, 3); // ID 변경(휴대폰 마다 id 다르게 해야함.) *a23_npb_ai_manager.apk (id가 1입니다.) a53s_npb_ai_manager.apk (id가 2입니다.)
                             Log.d(TAG, "Starting API call to upload image");
                             apiService.uploadImage(imageData).enqueue(new Callback<DetectionResult>() {
                                 @Override
