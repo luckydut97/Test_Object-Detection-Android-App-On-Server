@@ -166,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 actionButton.setText("실행 대기 (" + timeRangeText + ")");
             }
-            actionButton.setBackgroundTintList(ContextCompat.getColorStateList(this, android.R.color.holo_green_light));
+            actionButton.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.green2)); //버튼 색상
             stopCamera();
         }
     }
@@ -264,45 +264,49 @@ public class MainActivity extends AppCompatActivity {
                         image.close(); // image를 close 처리합니다.
 
                         imageProcessingExecutor.execute(() -> {
-                            String base64Image = ImageUtils.bitmapToBase64(finalBitmap);
-                            ImageData imageData = new ImageData(base64Image, 3); // ID 변경(휴대폰 마다 id 다르게 해야함.) *a23_npb_ai_manager.apk (id가 1입니다.) a53s_npb_ai_manager.apk (id가 2입니다.)
-                            Log.d(TAG, "Starting API call to upload image");
-                            apiService.uploadImage(imageData).enqueue(new Callback<DetectionResult>() {
-                                @Override
-                                public void onResponse(Call<DetectionResult> call, Response<DetectionResult> response) {
-                                    Log.d(TAG, "Response received");
-                                    if (response.isSuccessful() && response.body() != null) {
-                                        DetectionResult detectionResult = response.body();
-                                        if (detectionResult.getDetection() == 1) {
-                                            Log.d(TAG, "Detection result: " + detectionResult.getBoxes().toString());
-                                            mainHandler.post(() -> {
-                                                overlay.update(detectionResult); // UI 업데이트를 메인 스레드에서 실행
-                                                updateTable(detectionResult.getClassCnt()); // 테이블 업데이트
-                                            });
+                            try {
+                                String base64Image = ImageUtils.bitmapToBase64(finalBitmap);
+                                ImageData imageData = new ImageData(base64Image, 2); // ID 변경(휴대폰 마다 id 다르게 해야함.) *a23_npb_ai_manager.apk (id가 1입니다.) a53s_npb_ai_manager.apk (id가 2입니다.)
+                                Log.d(TAG, "Starting API call to upload image");
+                                apiService.uploadImage(imageData).enqueue(new Callback<DetectionResult>() {
+                                    @Override
+                                    public void onResponse(Call<DetectionResult> call, Response<DetectionResult> response) {
+                                        Log.d(TAG, "Response received");
+                                        if (response.isSuccessful() && response.body() != null) {
+                                            DetectionResult detectionResult = response.body();
+                                            if (detectionResult.getDetection() == 1) {
+                                                Log.d(TAG, "Detection result: " + detectionResult.getBoxes().toString());
+                                                mainHandler.post(() -> {
+                                                    overlay.update(detectionResult); // UI 업데이트를 메인 스레드에서 실행
+                                                    updateTable(detectionResult.getClassCnt()); // 테이블 업데이트
+                                                });
+                                            } else {
+                                                Log.d(TAG, "No detection");
+                                                mainHandler.post(() -> {
+                                                    overlay.update(null); // UI 업데이트를 메인 스레드에서 실행
+                                                    updateTable(null); // 빈 테이블 표시
+                                                });
+                                            }
                                         } else {
-                                            Log.d(TAG, "No detection");
-                                            mainHandler.post(() -> {
-                                                overlay.update(null); // UI 업데이트를 메인 스레드에서 실행
-                                                updateTable(null); // 빈 테이블 표시
-                                            });
+                                            try {
+                                                String errorBody = response.errorBody().string();
+                                                Log.e(TAG, "Response error: " + errorBody);
+                                            } catch (IOException e) {
+                                                Log.e(TAG, "Error reading response error body", e);
+                                            }
+                                            mainHandler.post(() -> Toast.makeText(MainActivity.this, "Error: " + response.message(), Toast.LENGTH_SHORT).show());
                                         }
-                                    } else {
-                                        try {
-                                            String errorBody = response.errorBody().string();
-                                            Log.e(TAG, "Response error: " + errorBody);
-                                        } catch (IOException e) {
-                                            Log.e(TAG, "Error reading response error body", e);
-                                        }
-                                        mainHandler.post(() -> Toast.makeText(MainActivity.this, "Error: " + response.message(), Toast.LENGTH_SHORT).show());
                                     }
-                                }
 
-                                @Override
-                                public void onFailure(Call<DetectionResult> call, Throwable t) {
-                                    Log.e(TAG, "Request failed: " + t.getMessage());
-                                    mainHandler.post(() -> Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show());
-                                }
-                            });
+                                    @Override
+                                    public void onFailure(Call<DetectionResult> call, Throwable t) {
+                                        Log.e(TAG, "Request failed: " + t.getMessage());
+                                        mainHandler.post(() -> Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show());
+                                    }
+                                });
+                            } finally {
+                                image.close(); // Ensure that the image is closed after processing is complete
+                            }
                         });
                     } else {
                         image.close();
@@ -312,18 +316,20 @@ public class MainActivity extends AppCompatActivity {
                 image.close();
             }
         });
-        cameraProvider.unbindAll();
-        cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, imageAnalysis);
+
+        try {
+            cameraProvider.unbindAll();
+            cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, imageAnalysis);
+        } catch (Exception e) {
+            Log.e(TAG, "Error binding camera use cases: " + e.getMessage());
+        }
     }
 
     private void updateTable(Map<String, Integer> classCnt) {
         TableLayout tableLayout = findViewById(R.id.table_layout);
 
-        // 헤더와 첫 번째 구분선을 제외한 모든 행 제거
-        int childCount = tableLayout.getChildCount();
-        if (childCount > 2) {
-            tableLayout.removeViews(2, childCount - 2);
-        }
+        // 테이블의 모든 행 제거
+        tableLayout.removeAllViews();
 
         if (classCnt == null) {
             return;

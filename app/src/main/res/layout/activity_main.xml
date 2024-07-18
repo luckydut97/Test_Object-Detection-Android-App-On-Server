@@ -47,7 +47,7 @@
             android:layout_height="wrap_content"
             android:text="인식 결과"
             android:textColor="@color/black"
-            android:background="#C5C5C5"
+            android:background="#D7D9DB"
             android:textStyle="bold"
             android:gravity="center"
             android:padding="8dp"/>
